@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:lamie/constants/colors.dart';
 import 'package:lamie/constants/custom_text.dart';
@@ -5,11 +7,13 @@ import 'package:lamie/constants/enumes.dart';
 import 'package:lamie/constants/project_assets.dart';
 import 'package:lamie/constants/texts.dart';
 import 'package:lamie/controller/validation/form_validation_functions.dart';
+import 'package:lamie/providers/signup_provider.dart';
 import 'package:lamie/view/widgets/custom_alert.dart';
 import 'package:lamie/view/widgets/custom_snakbar.dart';
 import 'package:lamie/util/screen_size.dart';
 import 'package:lamie/view/widgets/custom_button.dart';
 import 'package:lamie/view/widgets/custom_text_field.dart';
+import 'package:provider/provider.dart';
 
 class SignupForm extends StatefulWidget {
   final VoidCallback onBackPressed;
@@ -105,39 +109,18 @@ class _SignupFormState extends State<SignupForm> {
                   ValidationController.confirmPasswordValidator(
                       value, _passwordController.text),
             ),
-            CustomButton(
-                backgroundColor: ProjectColors.liteViolet,
-                textColor: ProjectColors.whiteColor,
-                context: context,
-                logoPath: ProjectAssets.signupLogo,
-                buttonText: ProjectTexts.signUp,
-                onPressed: () {
-                  _submitSignupForm();
-                }),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CustomText.createCustomText(
-                    context: context,
-                    text: ProjectTexts.signUpnWithOther,
-                    color: ProjectColors.whiteColor),
-              ],
-            ),
-            SizedBox(
-              child: Column(
-                children: [
-                  CustomButton(
-                      backgroundColor: ProjectColors.primaryViolet,
+            Consumer<SignupProvider>(
+              builder: (context, provider, child) => provider.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : CustomButton(
+                      backgroundColor: ProjectColors.liteViolet,
                       textColor: ProjectColors.whiteColor,
                       context: context,
-                      logoPath: ProjectAssets.googleLogo,
-                      buttonText: ProjectTexts.googleSignup,
+                      logoPath: ProjectAssets.signupLogo,
+                      buttonText: ProjectTexts.signUp,
                       onPressed: () {
-                        print('object');
+                        _handleSignup(context: context, provider: provider);
                       }),
-                  const SizedBox(height: 20),
-                ],
-              ),
             ),
           ],
         ),
@@ -145,12 +128,42 @@ class _SignupFormState extends State<SignupForm> {
     );
   }
 
-  void _submitSignupForm() {
+  void _handleSignup(
+      {required BuildContext context, required SignupProvider provider}) async {
     if (_formKey.currentState!.validate()) {
-      CustomAlertBox.showAlert(
-          context: context,
-          title: ProjectTexts.verificationSentTitle,
-          message: ProjectTexts.verificationSentMessage);
+      var email = _emailController.text;
+      var username = _userNameController.text;
+      var password = _passwordController.text;
+      var password2 = _confirmPasswordController.text;
+
+      var result = await provider.signup(
+          email: email,
+          username: username,
+          password: password,
+          password2: password2);
+
+      if (result.isSuccess) {
+        _formKey.currentState!.reset();
+        _userNameController.clear();
+        _emailController.clear();
+        _passwordController.clear();
+        _confirmPasswordController.clear();
+        CustomAlertBox.showAlert(
+            context: context,
+            title: ProjectTexts.verificationSentTitle,
+            message: ProjectTexts.verificationSentMessage);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnakbar.createSnackBar(result.message, SnackBarType.error));
+      }
     }
   }
+  // void _submitSignupForm() {
+  //   if (_formKey.currentState!.validate()) {
+  //     CustomAlertBox.showAlert(
+  //         context: context,
+  //         title: ProjectTexts.verificationSentTitle,
+  //         message: ProjectTexts.verificationSentMessage);
+  //   }
+  // }
 }

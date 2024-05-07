@@ -4,4 +4,5 @@ class ProjectAssets {
   static String facebookLogo = 'assets/facebook_logo.png';
   static String loginLogo = 'assets/login.png';
   static String signupLogo = 'assets/sign_up.png';
+  static String splashLogo = 'assets/splash.gif';
 }
